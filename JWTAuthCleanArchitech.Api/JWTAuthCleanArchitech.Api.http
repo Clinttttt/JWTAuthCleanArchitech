@@ -1,0 +1,6 @@
+@JWTAuthCleanArchitech.Api_HostAddress = http://localhost:5285
+
+GET {{JWTAuthCleanArchitech.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
