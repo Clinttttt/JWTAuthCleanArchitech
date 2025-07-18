@@ -1,4 +1,5 @@
 ﻿using JWTAuthCleanArchitech.Domain.Entities;
+using JWTAuthCleanArchitech.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using System;
@@ -15,6 +16,7 @@ namespace JWTAuthCleanArchitech.Infrastructure.Data
         {       
         }
         public DbSet<User> users { get; set; }
+        public DbSet<Movies> movies { get; set; }
         
     }
 

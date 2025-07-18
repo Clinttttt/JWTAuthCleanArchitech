@@ -1,7 +1,8 @@
 ﻿using Azure.Core;
+using JWTAuthCleanArchitech.Domain.DTOs;
 using JWTAuthCleanArchitech.Domain.Entities;
-using JWTAuthCleanArchitech.Domain.Models;
 using JWTAuthCleanArchitech.Infrastructure.Data;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -20,12 +21,12 @@ namespace JWTAuthCleanArchitech.Infrastructure.Services
 {
     class AuthService(ApplicationDbContext context, IConfiguration configuration) : IAuthService
     {
-      
-        
+
+       
         public async Task<TokenResponseDto?> HandleLogin(UserDto request)
         {
             var user = await context.users.FirstOrDefaultAsync(u => u.UserName == request.UserName);
-              if(user is null)
+            if (user is null)
             {
                 return null;
             }
@@ -100,7 +101,8 @@ namespace JWTAuthCleanArchitech.Infrastructure.Services
             {
                 new Claim(ClaimTypes.Name,user.UserName),
                 new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)
+               new Claim(ClaimTypes.Role, user.Role)
+
             };
 
 
@@ -131,5 +133,32 @@ namespace JWTAuthCleanArchitech.Infrastructure.Services
             await context.SaveChangesAsync();
             return user;
         }
+        public async Task<bool> LogoutUser(Guid id )
+        {
+            var user = await context.users.FindAsync(id);
+            if(user is null)
+            {
+                return false;
+            }
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(-1);
+            await context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<TokenResponseDto?> BecomeAnAdmin(Guid id)
+        {
+            var user = await context.users.FindAsync(id);
+            if(user is null)
+            {
+                return null;
+            }
+            user.Role = "Admin";
+            
+            await context.SaveChangesAsync();
+            return await CreateTokenResponse(user);
+        }
+
+
     }
 }
+
