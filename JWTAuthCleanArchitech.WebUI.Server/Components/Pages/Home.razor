@@ -1,7 +1,143 @@
 ﻿@page "/"
-
+@using JWTAuthCleanArchitech.Domain.DTOs
+@using JWTAuthCleanArchitech.Domain.Models
+@using JWTAuthCleanArchitech.Infrastructure.Data
+@using JWTAuthCleanArchitech.WebUI.Server.Services
+@using Mapster
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedSessionStorage Storage
+@inject BookApiService bookservice
+@inject ApplicationDbContext context
+@attribute [StreamRendering]
+@rendermode InteractiveServer
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
 
-Welcome to your new app.
+@if (@Books is null)
+{
+    <h1> No Data</h1>
+}
+else
+{
+    @foreach (var item in Books)
+    {
+        <table>
+            <tr>
+                <th>
+
+
+                    <h5>@item.MovieTitle</h5>
+                    <h5>@item.Description</h5>
+                    <h5>@item.Genre</h5>
+                 
+                    <button class="btn-primary" @onclick="()=> EditBook(item)">Edit</button>
+                    <button class="btn-danger" @onclick="()=> RemoveBook(item.Id)">Remove Book</button>
+
+
+
+
+
+                </th>
+            </tr>
+        </table>
+    }
+
+
+    <div>
+        <EditForm Model="@book" OnValidSubmit="@HandleSubmit" FormName="fillup">
+            <input type="text" @bind="book.MovieTitle" placeholder="Enter Movie Title"></input>
+            <input type="text" @bind="book.Description" placeholder="Enter Description"></input>
+            <input type="text" @bind="book.Genre" placeholder="Enter Genre"></input>
+            <button type="submit">Saves</button>
+        </EditForm>
+    </div>
+
+
+}
+
+
+@code {
+
+
+
+    private List<Movies>? Books;
+    private MoviesDto book = new();
+
+private bool _isInitialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var tokenResult = await Storage.GetAsync<string>("access_token");
+
+            if (tokenResult.Success)
+            {
+                await LoadAll();
+                @*  bookservice.SetToken(tokenResult.Value!);*@
+                Books = await bookservice.GetAllAsyc(); 
+                StateHasChanged(); 
+            }
+
+            _isInitialized = true;
+        }
+    }
+
+
+
+    //LOAD ALL
+    private async Task LoadAll()
+    {
+        Books = await bookservice.GetAllAsyc();
+    }
+    //ADD BOOK
+    public async Task HandleSubmit()
+    {
+
+        if (!string.IsNullOrEmpty(book.MovieTitle))
+        {
+            if(book.Id == Guid.Empty)
+            {
+                await bookservice.AddBook(book);
+
+            }
+            else
+            {
+              await bookservice.UpdateBook(book.Adapt<Movies>());
+
+            }
+            book = new();
+            await LoadAll();
+
+          
+        }   }
+   //Edit
+    private void EditBook(Movies movie)
+    {
+        book = new MoviesDto
+
+            {
+                Id = movie.Id,
+                MovieTitle = movie.MovieTitle,
+                Description = movie.Description,
+                Genre = movie.Genre
+
+
+            };
+    }
+
+    //Remove
+    public async Task RemoveBook(Guid id)
+    {
+        var book = await bookservice.DeleteBook(id);
+        if(book)
+        {
+            await LoadAll();
+        }
+    }
+
+    
+ 
+
+
+}

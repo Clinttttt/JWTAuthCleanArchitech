@@ -1,0 +1,72 @@
+﻿@page "/mainmenu"
+@using JWTAuthCleanArchitech.Domain.DTOs
+@using JWTAuthCleanArchitech.Domain.Entities
+@using JWTAuthCleanArchitech.Infrastructure.Services
+@using JWTAuthCleanArchitech.WebUI.Server.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@rendermode InteractiveServer
+@inject AuthStateProvider authProvider
+@inject AuthApiService authApiService
+@inject NavigationManager navigationManager
+@inject ProtectedLocalStorage localStorage
+@inject AuthenticationStateProvider authenticationStateProvider
+<h3>Authentication Debug</h3>
+
+<CascadingAuthenticationState>
+    <AuthorizeView Roles="Admin">
+        <Authorized>
+            <p>Your are an admin Mabuhay!</p>
+            <button @onclick="HandleLogout">Logout</button>
+
+        </Authorized>
+
+        <NotAuthorized>
+            <p>Not admin</p>
+            <button @onclick="BecomeAdmin">Become Admin</button>
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+
+
+
+@code {
+    private AuthStateProvider? _authStateProvider;
+    public async Task HandleLogout()
+    {
+        await authProvider.LogoutAsync();
+        navigationManager.NavigateTo("/login", forceLoad: true);
+    }
+    protected override void OnInitialized()
+    {
+        _authStateProvider = (AuthStateProvider)authenticationStateProvider;
+    }
+
+    public  async Task BecomeAdmin()
+    {
+        var results =  await authApiService.BecomeAdminAsync();
+        try
+        {
+            if (results is not null)
+            {
+                await localStorage.SetAsync("access_token", results.AccessToken);
+                Console.WriteLine("access_token" + results.AccessToken);
+            }
+            authProvider!.NotifyUserChanged(); 
+            StateHasChanged();
+        }catch(Exception ex)
+        {
+            Console.WriteLine("Error" + ex.Message);
+        }
+    }
+
+
+    }
+
+   
+
+
+
+      

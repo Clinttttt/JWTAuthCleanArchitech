@@ -1,0 +1,12 @@
+﻿@page "/Auth"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize(Roles = "Admin")]
+
+
+<p>You Are an admin</p>
+
+
+@code {
+
+}

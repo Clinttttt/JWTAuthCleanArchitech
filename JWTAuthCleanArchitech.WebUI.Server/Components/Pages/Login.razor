@@ -1,0 +1,133 @@
+﻿@page "/login"
+@using JWTAuthCleanArchitech.Domain.DTOs
+@using JWTAuthCleanArchitech.Infrastructure.Services
+@using JWTAuthCleanArchitech.WebUI.Server.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using System.Security.Claims
+
+@inject AuthApiService authApiService
+@inject ProtectedLocalStorage localStorage
+@inject AuthStateProvider authProvider
+
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+<h3>Login</h3>
+
+
+
+
+
+
+
+<EditForm Model="@user" OnValidSubmit="HandleLogin" FormName="logins">
+
+
+    <div>
+        <label>Username</label><br />
+        <input type="text" @bind="user.UserName" />
+    </div>
+    <div>
+        <label>Password</label><br />
+        <input type="password" @bind="user.Password" />
+    </div>
+    <button type="submit">Login</button>
+</EditForm>
+
+@if (!string.IsNullOrWhiteSpace(Error))
+{
+    <p class="text-danger">@Error</p>
+}
+
+@foreach (var claim in claims)
+{
+    <li><b>@claim.Type</b>: @claim.Value</li>
+
+}
+
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <Authorized>
+            <p>hi</p>
+        </Authorized>
+        <NotAuthorized>
+            <hello>hello</hello>
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+@code {
+    private UserDto user = new();
+    private string? Error;
+    private bool _hasRendered = false;
+    private IEnumerable<Claim> claims = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await authProvider.GetAuthenticationStateAsync();
+        claims = state.User.Claims;
+    }
+
+    private async Task HandleLogin()
+    {
+        Error = null;
+
+        if (string.IsNullOrWhiteSpace(user.UserName) || string.IsNullOrWhiteSpace(user.Password))
+        {
+            Error = "❌ Username and password are required.";
+            return;
+        }
+
+        try
+        {
+            var result = await authApiService.LoginAsync(user);
+
+            if (result is null)
+            {
+                Error = "❌ Invalid username or password.";
+                return;
+            }
+
+            await localStorage.SetAsync("access_token", result.AccessToken);
+            await localStorage.SetAsync("refresh_token", result.RefreshToken);
+
+            await Task.Delay(100);
+            authProvider.NotifyUserChanged();
+            await Task.Delay(500); // gives time for state update
+            Navigation.NavigateTo("/mainmenu", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Error = "❌ Login failed.";
+            Console.WriteLine("Login error: " + ex.Message);
+        }
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_hasRendered)
+        {
+            _hasRendered = true;
+
+    try
+            {
+                var result = await localStorage.GetAsync<string>("access_token");
+                var token = result.Success ? result.Value : null;
+
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    Console.WriteLine(" Access Token: " + token);
+
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Storage error: " + ex.Message);
+            }
+
+            StateHasChanged();
+        }
+    }
+}
