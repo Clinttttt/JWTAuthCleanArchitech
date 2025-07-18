@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JWTAuthCleanArchitech.Domain.Models
+namespace JWTAuthCleanArchitech.Domain.DTOs
 {
     public class UserDto
     {
         public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+
 
     }
 }
