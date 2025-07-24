@@ -11,7 +11,7 @@ namespace JWTAuthCleanArchitech.Infrastructure.Services
    public interface IbookService
     {
         Task<Movies?> AddMovies(Movies movie);
-        Task<IEnumerable<Movies?>> GetAllMovies();
+        Task<IEnumerable<Movies?>> GetAllMovies(Guid userId);
       
         Task<Movies?> UpdateMovies(Movies movie);
      

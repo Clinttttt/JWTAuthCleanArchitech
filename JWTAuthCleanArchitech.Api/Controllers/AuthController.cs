@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Formatters.Xml;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Identity.Client;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Claims;
 
 namespace JWTAuthCleanArchitech.Api.Controllers
 {
@@ -131,11 +132,20 @@ namespace JWTAuthCleanArchitech.Api.Controllers
         /// <summary>
         /// /////////////////////////////////////////////////////////////////////////////
         /// </summary>
-
+        [Authorize]
         [HttpGet("GetAllProduct")]
         public async Task<ActionResult<Movies>> GetAllProduct()
         {
-            var book = await Bookservice.GetAllMovies();
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return Unauthorized("User ID not found in token.");
+            }
+
+            var userid = Guid.Parse(userIdClaim.Value);
+
+            var book = await Bookservice.GetAllMovies(userid);
             if (book is null)
             {
                 return BadRequest("No Book here");
@@ -143,44 +153,64 @@ namespace JWTAuthCleanArchitech.Api.Controllers
             }
             return Ok(book);
         }
+        [Authorize]
         [HttpGet("GetBook/{id}")]
         public async Task<ActionResult<Movies>> GetBook(Guid id)
         {
+            var UserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+           
             var movie = await Bookservice.GetMovies(id);
-            return movie is not null ? Ok(movie) : BadRequest("idk");
+            return movie is not null && movie.UserId == UserId ? Ok(movie) : BadRequest("idk");
 
             
         }
 
-        
+        [Authorize]
         [HttpPost("AddBook")]
         public async Task<ActionResult<Movies>> AddBook(MoviesDto moviedto)
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return Unauthorized("User ID not found in token.");
+            }
+
+            var userid = Guid.Parse(userIdClaim.Value);
             var moviedtos = moviedto.Adapt<Movies>();
+            moviedtos.UserId = userid;
          var book = await Bookservice.AddMovies(moviedtos);
             return CreatedAtAction(nameof(GetBook), new { id = book.Id }, book);
         }
+
+
+        [Authorize]
         [HttpDelete("DeleteMovies/{id}")]
         public async Task<ActionResult<Movies?>> DeleteMovie( Guid id)
         {
-            var movie = await Bookservice.DeleteMovies(id);
-            if(movie is null)
+            var UserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var movies = await Bookservice.GetMovies(id);
+            if(movies is null || movies.UserId != UserId)
             {
                 return BadRequest("Nothings to delete");
                
             }
-            return Ok(movie);
+           var results =  await Bookservice.DeleteMovies(id);
+            return Ok(results);
            
         }
+        [Authorize]
         [HttpPut("UpdateMovies")]
         public async Task<ActionResult<Movies>> UpdateMovies(Movies id )
         {
-            var updatebook = await Bookservice.UpdateMovies(id);
-            if (updatebook is null)
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var Updates = await Bookservice.GetMovies(id.Id);
+          
+
+            if (Updates is null || Updates.UserId != userId)
             {
                 return BadRequest("something went wrong");
             }
-      
+            var updatebook = await Bookservice.UpdateMovies(id);
             return Ok(updatebook);
         }
 

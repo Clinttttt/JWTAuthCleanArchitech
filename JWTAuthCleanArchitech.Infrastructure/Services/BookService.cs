@@ -17,9 +17,15 @@ namespace JWTAuthCleanArchitech.Infrastructure.Services
 {
   public  class BookService(ApplicationDbContext context) : IbookService
     {
-    public async Task<IEnumerable<Movies?>> GetAllMovies()
+
+    public async Task<IEnumerable<Movies?>> GetAllMovies(Guid userId)
         {
-            return await context.movies.ToListAsync();
+
+
+
+
+            return await context.movies.Where(u=> u.UserId == userId).
+                ToListAsync();
         }
     public async Task<Movies?> AddMovies(Movies movie)
         { 

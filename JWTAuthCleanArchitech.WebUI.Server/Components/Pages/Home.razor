@@ -43,19 +43,19 @@ else
     }
 
 
-    <div>
-        <EditForm Model="@book" OnValidSubmit="@HandleSubmit" FormName="fillup">
-            <input type="text" @bind="book.MovieTitle" placeholder="Enter Movie Title"></input>
-            <input type="text" @bind="book.Description" placeholder="Enter Description"></input>
-            <input type="text" @bind="book.Genre" placeholder="Enter Genre"></input>
-            <button type="submit">Saves</button>
-        </EditForm>
-    </div>
 
 
 }
 
 
+<div>
+    <EditForm Model="@book" OnValidSubmit="@HandleSubmit" FormName="fillup">
+        <input type="text" @bind="book.MovieTitle" placeholder="Enter Movie Title"></input>
+        <input type="text" @bind="book.Description" placeholder="Enter Description"></input>
+        <input type="text" @bind="book.Genre" placeholder="Enter Genre"></input>
+        <button type="submit">Saves</button>
+    </EditForm>
+</div>
 @code {
 
 
